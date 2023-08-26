@@ -38,20 +38,46 @@ import Promptbar from '@/components/Promptbar';
 
 import HomeContext from './home.context';
 import { HomeInitialState, initialState } from './home.state';
+import { Auth0Provider, useAuth0 } from '@auth0/auth0-react';
 
 import { v4 as uuidv4 } from 'uuid';
 
 interface Props {
   serverSideApiKeyIsSet: boolean;
   serverSidePluginKeysSet: boolean;
-  defaultModelId: OpenAIModelID;
+  defaultModelId : OpenAIModelID;
 }
+
+
+
+const AuthHome = ({
+  serverSideApiKeyIsSet,
+  serverSidePluginKeysSet,
+  defaultModelId
+}: Props) => {
+
+  return (
+    <Auth0Provider
+      domain='dev-cyv8un57ykdlfooc.us.auth0.com'
+      clientId='6Fq09y8WEWosJRnBafevtxOrelyz0msW'
+      authorizationParams={{redirect_uri: "http://localhost:3000/"}}>
+      <Home 
+        serverSideApiKeyIsSet = {serverSideApiKeyIsSet}
+        serverSidePluginKeysSet = {serverSidePluginKeysSet}
+        defaultModelId={OpenAIModelID.GPT_3_5_AZ}></Home>         
+    </Auth0Provider>
+    );
+
+}
+
 
 const Home = ({
   serverSideApiKeyIsSet,
   serverSidePluginKeysSet,
   defaultModelId,
 }: Props) => {
+  const { isAuthenticated, loginWithRedirect, logout} = useAuth0();
+  
   const { t } = useTranslation('chat');
   const { getModels } = useApiService();
   const { getModelsError } = useErrorService();
@@ -348,52 +374,70 @@ const Home = ({
   ]);
 
   return (
-    <HomeContext.Provider
-      value={{
-        ...contextValue,
-        handleNewConversation,
-        handleCreateFolder,
-        handleDeleteFolder,
-        handleUpdateFolder,
-        handleSelectConversation,
-        handleUpdateConversation,
-      }}
-    >
-      <Head>
-        <title>Chatbot UI</title>
-        <meta name="description" content="ChatGPT but better." />
-        <meta
-          name="viewport"
-          content="height=device-height ,width=device-width, initial-scale=1, user-scalable=no"
-        />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      {selectedConversation && (
-        <main
-          className={`flex h-screen w-screen flex-col text-sm text-white dark:text-white ${lightMode}`}
-        >
-          <div className="fixed top-0 w-full sm:hidden">
-            <Navbar
-              selectedConversation={selectedConversation}
-              onNewConversation={handleNewConversation}
-            />
-          </div>
-
-          <div className="flex h-full w-full pt-[48px] sm:pt-0">
-            <Chatbar />
-
-            <div className="flex flex-1">
-              <Chat stopConversationRef={stopConversationRef} />
+  
+    <div>
+    {
+      
+      !isAuthenticated && (<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                                   <button onClick={() => loginWithRedirect()}
+                                           style={{ fontSize: '48px', padding: '10px 20px', backgroundColor: 'blue', color: 'white' }}
+                                   >Log In</button>
+                          </div>)
+    }
+    {
+      isAuthenticated && (<HomeContext.Provider
+        value={{
+          ...contextValue,
+          handleNewConversation,
+          handleCreateFolder,
+          handleDeleteFolder,
+          handleUpdateFolder,
+          handleSelectConversation,
+          handleUpdateConversation,
+        }}
+      >
+        <Head>
+          <title>Chatbot UI</title>
+          <meta name="description" content="ChatGPT but better." />
+          <meta
+            name="viewport"
+            content="height=device-height ,width=device-width, initial-scale=1, user-scalable=no"
+          />
+          <link rel="icon" href="/favicon.ico" />
+        </Head>
+        {selectedConversation && (
+          <main
+            className={`flex h-screen w-screen flex-col text-sm text-white dark:text-white ${lightMode}`}
+          >
+            <div className="fixed top-0 w-full sm:hidden">
+              <Navbar
+                selectedConversation={selectedConversation}
+                onNewConversation={handleNewConversation}
+              />
             </div>
+  
+            <div className="flex h-full w-full pt-[48px] sm:pt-0">
+              <Chatbar />
+  
+              <div className="flex flex-1">
+                <Chat stopConversationRef={stopConversationRef} />
+              </div>
 
-            <Promptbar />
-          </div>
-        </main>
-      )}
-    </HomeContext.Provider>
+              <button onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>
+                  Log Out
+              </button>
+  
+              <Promptbar />
+            </div>
+          </main>
+        )}
+      </HomeContext.Provider>)
+    }
+    
+    </div>
   );
 };
-export default Home;
+export default AuthHome;
 
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
   const defaultModelId =
