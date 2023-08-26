@@ -48,7 +48,13 @@ interface Props {
   defaultModelId : OpenAIModelID;
 }
 
+const PROD_CHATBOT_URL = "https://chatbot-ui-fork-chi.vercel.app/zh";
+const DEV_CHATBOT_URL = "http://localhost:3000";
+let CHATBOT_URL = PROD_CHATBOT_URL;
 
+if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+    CHATBOT_URL = DEV_CHATBOT_URL;
+}
 
 const AuthHome = ({
   serverSideApiKeyIsSet,
@@ -60,7 +66,7 @@ const AuthHome = ({
     <Auth0Provider
       domain='dev-cyv8un57ykdlfooc.us.auth0.com'
       clientId='6Fq09y8WEWosJRnBafevtxOrelyz0msW'
-      authorizationParams={{redirect_uri: "http://localhost:3000/"}}>
+      authorizationParams={{redirect_uri: CHATBOT_URL}}>
       <Home 
         serverSideApiKeyIsSet = {serverSideApiKeyIsSet}
         serverSidePluginKeysSet = {serverSidePluginKeysSet}
